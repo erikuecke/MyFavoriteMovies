@@ -1,0 +1,18 @@
+MyFavoriteMovies App keys/stuff
+
+API Key (v3 auth)
+
+3e260393924e97835777d961812c6ece
+
+---
+
+API Read Access Token (v4 auth)
+
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzZTI2MDM5MzkyNGU5NzgzNTc3N2Q5NjE4MTJjNmVjZSIsInN1YiI6IjU5NTJhMzc2YzNhMzY4MTM4ODAyODEzZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.hMGTK6JE7F0mR8UP6qW2uyDgpbR5W27CTibC_0sLesA
+
+---
+
+Example API Request
+
+https://api.themoviedb.org/3/movie/550?api_key=3e260393924e97835777d961812c6ece
+
