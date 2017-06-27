@@ -88,19 +88,79 @@ class LoginViewController: UIViewController {
         
         /* TASK: Get a request token, then store it (appDelegate.requestToken) and login with the token */
         
-        /* 1. Set the parameters */
+        
+        ///* 1. Set the parameters *///
         let methodParameters = [
             Constants.TMDBParameterKeys.ApiKey: Constants.TMDBParameterValues.ApiKey
         ]
         
-        /* 2/3. Build the URL, Configure the request */
+        
+        ///* 2/3. Build the URL, Configure the request *///
         let request = URLRequest(url: appDelegate.tmdbURLFromParameters(methodParameters as [String:AnyObject], withPathExtension: "/authentication/token/new"))
         
-        /* 4. Make the request */
+        
+        ///* 4. Make the request *///
         let task = appDelegate.sharedSession.dataTask(with: request) { (data, response, error) in
             
-            /* 5. Parse the data */
-            /* 6. Use the data! */
+            
+            // If an error occurs, print it and re-enable the UI
+            func displayError(_ error: String) {
+                print(error)
+                performUIUpdatesOnMain {
+                    self.setUIEnabled(true)
+                    self.debugTextLabel.text = "Login Failed (Request Token)."
+                }
+            }
+            
+            // GUARD: Was there an error?
+            guard (error == nil) else {
+                if let error = error {
+                    displayError("There was an error with your request: \(error)")
+                }
+                return
+            }
+            
+            // GUARD: Did we get a successful 2xx response?
+            guard let statusCode = (response as? HTTPURLResponse)?.statusCode, statusCode >= 200 && statusCode <= 299 else {
+                if error != nil {
+                    displayError("Your request return a status code other than 2xx!")
+                }
+                return
+            }
+            
+            // GUARD: Was there any data return?
+            guard let data = data else {
+                displayError("No data was return by the request!")
+                return
+            }
+            
+            
+            ///* 5. PARSE THE DATA *///
+            let parsedResult: [String:AnyObject]!
+            do {
+                parsedResult = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String:AnyObject]
+            } catch {
+                displayError("Could not parse the data as JSON: '\(data)'")
+                return
+            }
+            
+            // GUARD: Did TheMovieDB return an error?
+            if let _ = parsedResult[Constants.TMDBResponseKeys.StatusCode] as? Int {
+                displayError("TheMovieDB return an error. See the '\(Constants.TMDBResponseKeys.StatusCode)' and '\(Constants.TMDBResponseKeys.StatusMessage)' in \(parsedResult)")
+            }
+            
+            // GUARD: Is the "request_token key in parsedResult?
+            guard let requestToken = parsedResult[Constants.TMDBResponseKeys.RequestToken] as? String else {
+                displayError("Cannot find key '\(Constants.TMDBResponseKeys.RequestToken)' in \(parsedResult)")
+                return
+            }
+            
+            
+            ///* 6. USE THE DATA! *///
+            self.appDelegate.requestToken = requestToken
+            self.loginWithToken(self.appDelegate.requestToken!)
+            print("test test test")
+            
         }
 
         /* 7. Start the request */
