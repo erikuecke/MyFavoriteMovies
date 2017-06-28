@@ -336,12 +336,82 @@ class LoginViewController: UIViewController {
         
         /* TASK: Get the user's ID, then store it (appDelegate.userID) for future use and go to next view! */
         
-        /* 1. Set the parameters */
-        /* 2/3. Build the URL, Configure the request */
-        /* 4. Make the request */
-        /* 5. Parse the data */
-        /* 6. Use the data! */
-        /* 7. Start the request */
+        ///* 1. SET THE PARAMETERS *///
+        let methodParameters = [
+            Constants.TMDBParameterKeys.ApiKey: Constants.TMDBParameterValues.ApiKey,
+            Constants.TMDBParameterKeys.SessionID: sessionID
+        ]
+        
+        
+        ///* 2/3. BUILD THE URL, CONFIGURE THE REQUEST *///
+        let request = URLRequest(url: appDelegate.tmdbURLFromParameters(methodParameters as [String:AnyObject], withPathExtension: "/account"))
+        
+        
+        ///* 4. MAKE THE REQUEST *///
+        let task = appDelegate.sharedSession.dataTask(with: request) { (data, response, error) in
+            
+            // If an error occurs, print it and re-enable the UI
+            func displayError(_ error: String, debugLabelText: String? = nil) {
+                print(error)
+                performUIUpdatesOnMain {
+                    self.setUIEnabled(true)
+                    self.debugTextLabel.text = "Login Failed (User ID)."
+                }
+            }
+            
+            // GUARD: Was there an error? 
+            guard (error == nil) else {
+                if let error = error {
+                    displayError("There was an error with your request: \(error)")
+                }
+                return
+            }
+            
+            // GUARD: Did we get a successful 2xx response?
+            guard let statusCode = (response as? HTTPURLResponse)?.statusCode, statusCode >= 200 && statusCode <= 299 else {
+                displayError("Your request retuarn a status code other than 2xx!")
+                return
+            }
+            
+            // GUARD: Was there any data retured? 
+            guard let data = data else {
+                displayError("No data was return by the request!")
+                return
+            }
+            
+            
+            ///* 5. PARSE THE DATA *///
+            let parsedResult: [String:AnyObject]!
+            do {
+                parsedResult = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String:AnyObject]
+            } catch {
+                print("Could not parse the data as JSON: '\(data)")
+                return
+            }
+
+            
+            // GUARD: Did TheMovieDB return an error?
+            if let _ = parsedResult[Constants.TMDBResponseKeys.StatusCode] as? Int {
+                displayError("TheMovieDB returned an error. See '\(Constants.TMDBResponseKeys.StatusCode)' and '\(Constants.TMDBResponseKeys.StatusMessage)' in \(parsedResult)")
+                return
+            }
+            
+            // GUARD: Is the "id" key in parsedResult?
+            guard let userID = parsedResult[Constants.TMDBResponseKeys.UserID] as? Int else {
+                displayError("Cannot find key '\(Constants.TMDBResponseKeys.UserID)' in \(parsedResult)")
+                return
+            }
+            
+        
+            ///* 6. USE THE DATA! *///
+            self.appDelegate.userID = userID
+            print("The user id: \(userID)")
+            self.completeLogin()
+        }
+ 
+        
+        ///* 7. START THE REQUEST *///
+        task.resume()
     }
 }
 
